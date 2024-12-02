@@ -1,6 +1,6 @@
 "use client";
 
-import Terminal from "./components/TerminalComponenet";
+import Terminal from "./components/TerminalComponent";
 
 export default function Home() {
   return (
