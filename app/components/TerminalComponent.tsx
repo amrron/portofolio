@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Terminal } from "xterm";
-import "xterm/css/xterm.css";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 
@@ -149,10 +148,10 @@ const TerminalComponent = () => {
             fitAddon.fit();
 
             printWithDelay(neofetch).then(() => {
-                 if (terminalInstance.current) {
-                     terminalInstance.current.write(prefix);
-                     setIsInitialized(true);
-                 }
+                if (terminalInstance.current) {
+                    terminalInstance.current.write(prefix);
+                    setIsInitialized(true);
+                }
             });
         }
 
@@ -169,7 +168,7 @@ const TerminalComponent = () => {
             }: {
                 key: string;
                 domEvent: KeyboardEvent;
-                }) => {
+            }) => {
                 if (!terminalInstance.current) return;
 
                 if (domEvent.key === "Backspace") {
