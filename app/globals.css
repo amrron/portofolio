@@ -14,8 +14,101 @@
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+.terminal-wrapper {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.terminal-window {
+    width: 1000px;
+    height: 680px;
+    background: #1e1e1e;
+    border-radius: 6px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    border: 1px solid #333;
+}
+
+.terminal-header {
+    background: #2d2d2d;
+    height: 30px;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #333;
+}
+
+.terminal-title {
+    color: #999;
+    font-size: 14px;
+    font-family: system-ui;
+}
+
+.terminal-subtitle {
+    color: #999;
+    font-size: 14px;
+    font-family: system-ui;
+}
+
+.window-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.control {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.minimize {
+    background: #f1c40f;
+}
+
+.maximize {
+    background: #27ae60;
+}
+
+.close {
+    background: #e74c3c;
+}
+
+.terminal-container {
+    padding: 4px;
+    height: calc(100% - 30px);
+}
+
+/* Override xterm styles */
+.xterm {
+    padding: 8px;
+}
+
+.xterm-viewport {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #666 #2d2d2d;
+}
+
+.xterm-viewport::-webkit-scrollbar {
+    width: 8px;
+}
+
+.xterm-viewport::-webkit-scrollbar-track {
+    background: #2d2d2d;
+}
+
+.xterm-viewport::-webkit-scrollbar-thumb {
+    background: #666;
+    border-radius: 4px;
+}
+
+/* Important: This is the key CSS for the pointer cursor */
+.xterm-link-layer {
+    cursor: pointer !important;
 }
