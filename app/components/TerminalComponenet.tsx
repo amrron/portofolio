@@ -9,8 +9,8 @@ const TerminalComponent = () => {
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
-    const terminalRef = useRef(null);
-    const terminalInstance = useRef(null);
+    const terminalRef = useRef<HTMLDivElement>(null);
+    const terminalInstance = useRef<Terminal | null>(null);
     const prefix = "welcome@portofolio-ali:~$ ";
     const [currentLine, setCurrentLine] = useState("");
     const [isInitialized, setIsInitialized] = useState(false);
