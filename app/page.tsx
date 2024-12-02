@@ -1,11 +1,11 @@
 "use client";
 
-import Terminal from "./components/TerminalComponent";
+import TerminalComponenet from "./components/TerminalComponent";
 
 export default function Home() {
   return (
     <div className="">
-      <Terminal />
+      <TerminalComponenet />
     </div>
   );
 }
