@@ -167,7 +167,9 @@ const TerminalComponent = () => {
             }: {
                 key: string;
                 domEvent: KeyboardEvent;
-            }) => {
+                }) => {
+                if (!terminalInstance.current) return;
+                
                 if (domEvent.key === "Backspace") {
                     if (currentLine.length > 0) {
                         setCurrentLine((prev) => prev.slice(0, -1));
