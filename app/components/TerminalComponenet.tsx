@@ -161,7 +161,13 @@ const TerminalComponent = () => {
 
     useEffect(() => {
         if (isInitialized && terminalInstance.current) {
-            const handleKey = ({ key, domEvent }) => {
+            const handleKey = ({
+                key,
+                domEvent,
+            }: {
+                key: string;
+                domEvent: KeyboardEvent;
+            }) => {
                 if (domEvent.key === "Backspace") {
                     if (currentLine.length > 0) {
                         setCurrentLine((prev) => prev.slice(0, -1));
