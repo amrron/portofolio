@@ -1,4 +1,6 @@
-import React, { useEffect, useRef, useState, useCallback} from "react";
+"use client";
+
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Terminal } from "xterm";
 import "xterm/css/xterm.css";
 import { FitAddon } from "@xterm/addon-fit";
