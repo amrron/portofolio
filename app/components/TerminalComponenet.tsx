@@ -62,6 +62,7 @@ const TerminalComponent = () => {
         new Promise((resolve) => setTimeout(resolve, ms));
 
     const printWithDelay = async (lines: string[]) => {
+        if (!terminalInstance.current) return;
         for (const line of lines) {
             terminalInstance.current.writeln(line);
             await sleep(50);
@@ -101,7 +102,8 @@ const TerminalComponent = () => {
 [0m[38;2;73;87;107m,[0m[38;2;73;88;107m,[0m[38;2;64;78;98m,[0m[38;2;61;74;94m'[0m[38;2;60;73;92m'[0m[38;2;72;85;107m,[0m[38;2;61;72;92m'[0m[38;2;70;82;100m,[0m[38;2;70;83;99m,[0m[38;2;70;83;100m,[0m[38;2;77;89;106m;[0m[38;2;81;93;109m;[0m[38;2;88;99;114m;[0m[38;2;102;111;125m:[0m[38;2;111;120;132mc[0m[38;2;117;126;136ml[0m[38;2;114;120;133mc[0m[38;2;114;122;135mc[0m[38;2;88;96;110m;[0m[38;2;75;84;97m,[0m[38;2;78;85;96m,[0m[38;2;84;90;99m;[0m[38;2;77;83;90m,[0m[38;2;74;79;87m,[0m[38;2;75;80;87m,[0m[38;2;69;75;84m'[0m[38;2;63;70;83m'[0m[38;2;49;58;71m.[0m[38;2;35;47;61m.[0m[38;2;31;42;55m.[0m[38;2;25;36;50m.[0m[38;2;27;37;54m.[0m[38;2;27;38;54m.[0m[38;2;32;44;61m.[0m[38;2;34;47;62m.[0m[38;2;27;39;52m.[0m[38;2;25;37;49m.[0m[38;2;25;37;50m.[0m[38;2;26;39;52m.[0m[38;2;28;41;53m.[0m[38;2;28;41;54m.[0m[38;2;33;47;60m.[0m[38;2;44;60;74m.[0m[38;2;52;68;85m'[0m[38;2;39;54;71m.[0m[38;2;46;61;78m.[0m[38;2;44;57;74m.[0m[38;2;47;61;79m.[0m[38;2;54;67;88m'[0m[38;2;54;67;87m'[0m[38;2;48;60;78m.[0m[38;2;53;64;82m.[0m[38;2;68;80;100m,[0m[38;2;66;75;94m'[0m[38;2;72;81;96m,[0m[38;2;81;90;106m;[0m[38;2;86;95;110m;[0m[38;2;94;103;118m:[0m[38;2;93;102;120m:[0m[38;2;106;117;136mc[0m
     `.split("\n");
 
-    const runCommand = (command: string) => {
+    const runCommand = useCallback((command: string) => {
+        if (!terminalInstance.current) return;
         if (command === "") {
             return;
         } else if (command === "ls projects") {
@@ -120,7 +122,7 @@ const TerminalComponent = () => {
         } else {
             terminalInstance.current.writeln(`${command}: command not found`);
         }
-    };
+    }, []);
 
     useEffect(() => {
         if (terminalRef.current && !isInitialized) {
@@ -145,8 +147,10 @@ const TerminalComponent = () => {
             fitAddon.fit();
 
             printWithDelay(neofetch).then(() => {
-                terminalInstance.current.write(prefix);
-                setIsInitialized(true);
+                 if (terminalInstance.current) {
+                     terminalInstance.current.write(prefix);
+                     setIsInitialized(true);
+                 }
             });
         }
 
