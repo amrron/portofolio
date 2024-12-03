@@ -128,7 +128,6 @@ export default function Home() {
 
   useEffect(() => {
       if (terminalRef.current && !isInitialized) {
-          const fitAddon = new FitAddon();
 
           terminalInstance.current = new Terminal({
               rows: 30,
@@ -142,11 +141,7 @@ export default function Home() {
               cursorBlink: true,
           });
 
-          terminalInstance.current.loadAddon(fitAddon);
-          terminalInstance.current.loadAddon(new WebLinksAddon());
-
           terminalInstance.current.open(terminalRef.current);
-          fitAddon.fit();
 
           printWithDelay(neofetch).then(() => {
               if (terminalInstance.current) {
