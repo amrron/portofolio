@@ -9,13 +9,21 @@ export default function Home() {
     const [position, setPosition] = useState({ x: 100, y: 100 });
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const [isResizing, setIsResizing] = useState(false);
+    const [resizeStart, setResizeStart] = useState({
+        width: 0,
+        height: 0,
+        x: 0,
+        y: 0,
+    });
     const prefix = "welcome@portofolio-ali:~$ ";
     const [currentLine, setCurrentLine] = useState("");
     const [isInitialized, setIsInitialized] = useState(false);
 
     const termRef = useRef<HTMLDivElement>(null);
     const terminalInstance = useRef<Terminal | null>(null);
-    const fitAddon = useRef<FitAddon | null>(null);
+
+  const fitAddon = useRef<FitAddon | null>(null);
 
     // Get list of project
     const getProjects = async () => {
@@ -90,13 +98,36 @@ export default function Home() {
                     x: e.clientX - dragOffset.x,
                     y: e.clientY - dragOffset.y,
                 });
+            } else if (isResizing && termRef.current) {
+                const newWidth =
+                    resizeStart.width + (e.clientX - resizeStart.x);
+                const newHeight =
+                    resizeStart.height + (e.clientY - resizeStart.y);
+                termRef.current.style.width = `${newWidth}px`;
+                termRef.current.style.height = `${newHeight}px`;
+                if (fitAddon.current) {
+                    fitAddon.current.fit();
+                }
             }
         },
-        [isDragging, dragOffset]
+        [isDragging, dragOffset, isResizing, resizeStart]
     );
 
     const handleMouseUp = useCallback(() => {
         setIsDragging(false);
+        setIsResizing(false);
+    }, []);
+
+    const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
+        if (termRef.current) {
+            setIsResizing(true);
+            setResizeStart({
+                width: termRef.current.offsetWidth,
+                height: termRef.current.offsetHeight,
+                x: e.clientX,
+                y: e.clientY,
+            });
+        }
     }, []);
 
     // Add event listeners
@@ -116,6 +147,7 @@ export default function Home() {
         if (!terminalInstance.current) return;
         for (const line of lines) {
             terminalInstance.current.writeln(line);
+            terminalInstance.current.scrollToBottom(); // Scroll to bottom after each line
             await sleep(50);
         }
     };
@@ -291,6 +323,19 @@ export default function Home() {
                         </div>
                     </div>
                     <div className="terminal-container" ref={termRef}></div>
+                    <div
+                        className="resize-handle"
+                        onMouseDown={handleResizeMouseDown}
+                        style={{
+                            width: "10px",
+                            height: "10px",
+                            background: "gray",
+                            position: "absolute",
+                            right: "0",
+                            bottom: "0",
+                            cursor: "nwse-resize",
+                        }}
+                    ></div>
                 </div>
             </div>
         </div>
