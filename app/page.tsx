@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Terminal } from "@xterm/xterm";
 import "xterm/css/xterm.css";
 import { FitAddon } from "@xterm/addon-fit";
+import { WebLinksAddon } from "@xterm/addon-web-links";
 
 export default function Home() {
   const [position, setPosition] = useState({ x: 100, y: 100 });
@@ -16,6 +17,50 @@ export default function Home() {
   const [currentLine, setCurrentLine] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
 
+    async function getProjects() {
+        const response = await fetch("/projects.json");
+        const data = await response.json();
+        return data;
+    }
+    
+  const printHelpText = (
+      terminal: Terminal,
+      name: string,
+      description: string,
+      link: string
+  ) => {
+      const namePadding = 20; // Adjust the padding as needed
+      const terminalWidth = terminal.cols; // Get the width of the terminal
+      const maxDescriptionWidth = terminalWidth - namePadding;
+
+      const words = description.split(" ");
+      let currentLine = "";
+      const lines = [];
+
+      words.forEach((word) => {
+          if ((currentLine + word).length > maxDescriptionWidth) {
+              lines.push(currentLine.trim());
+              currentLine = word + " ";
+          } else {
+              currentLine += word + " ";
+          }
+      });
+
+      if (currentLine.trim().length > 0) {
+          lines.push(currentLine.trim());
+      }
+
+      const paddedName = name.padEnd(namePadding, " ");
+      terminal.writeln('');
+      terminal.writeln(`${paddedName}${lines[0]}`);
+      for (let i = 1; i < lines.length; i++) {
+          terminal.writeln(" ".repeat(namePadding) + lines[i]);
+      }
+      terminal.writeln(
+          " ".repeat(namePadding) + "[\x1b]8;;"+link+"\x1b\\Link\x1b]8;;\x1b\\]"
+      );
+  };
+    
   // Add drag handlers
   const handleMouseDown = useCallback(
       (e: React.MouseEvent) => {
@@ -108,15 +153,14 @@ export default function Home() {
       if (command === "") {
           return;
       } else if (command === "ls projects") {
-          terminalInstance.current.writeln(
-              "1. Portfolio Website - A personal website built with Next.js"
-          );
-          terminalInstance.current.writeln(
-              "2. Task Manager - A CLI task management tool"
-          );
-          terminalInstance.current.writeln(
-              "3. Weather App - Real-time weather information"
-          );
+            getProjects().then((projects) => {
+                projects.forEach((project: { name: string; description: string; url: string; }) => {
+                    if (terminalInstance.current) {
+                        return printHelpText(terminalInstance.current, project.name, project.description, project.url);
+                    }
+                });
+            });
+              
       } else if (command.startsWith("cd ")) {
           const dir = command.split(" ")[1];
           terminalInstance.current.writeln(`Changed directory to ${dir}`);
@@ -127,7 +171,9 @@ export default function Home() {
 
   useEffect(() => {
       if (terminalRef.current && !isInitialized) {
-           const fitAddon = new FitAddon();
+        //   Addon initialization
+          const fitAddon = new FitAddon();
+          const webLinksAddon = new WebLinksAddon();
 
           terminalInstance.current = new Terminal({
               rows: 40,
@@ -140,7 +186,10 @@ export default function Home() {
               },
               cursorBlink: true,
           });
+
+        //   load addons
           terminalInstance.current.loadAddon(fitAddon);
+          terminalInstance.current.loadAddon(webLinksAddon);
 
           terminalInstance.current.open(terminalRef.current);
           fitAddon.fit();

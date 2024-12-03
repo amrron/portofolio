@@ -1,0 +1,20 @@
+[
+    {
+        "name": "Foody App",
+        "description": "Foody adalah aplikasi pencatatan nutrisi makanan yang dikonsumsi sehari-hari. Aplikasi ini dapat memberikan informasi nutrisi yang terkandung dalam makanan yang dikonsumsi. Aplikasi ini juga dapat memberikan rekomendasi makanan yang sehat berdasarkan nutrisi yang dibutuhkan oleh pengguna. Aplikasi ini juga dapat memberikan rekomendasi makanan yang sehat berdasarkan nutrisi yang dibutuhkan oleh pengguna.",
+        "image": "project1.jpg",
+        "url": "https://foody.web.id"
+    },
+    {
+        "name": "Wcrops",
+        "description": "Wcrops adalah website online shop yang menjual berbagai macam produk pertanian. Website ini menyediakan berbagai macam produk pertanian yang berkualitas dan terpercaya. Website ini juga menyediakan berbagai macam produk pertanian yang berkualitas dan terpercaya.",
+        "image": "project2.jpg",
+        "url": "https://wcrops.my.id"
+    },
+    {
+        "name": "Maggoplatgel",
+        "description": "Maggoplatgel adalah website online store yang menjual produk dari PT. Maggoherbal. Website ini dibuat sebagai company profile dan online store dari PT. Maggoherbal. Website ini menyediakan berbagai macam produk herbal yang berkualitas dan terpercaya.",
+        "image": "project3.jpg",
+        "url": "https://maggoplastgel.my.id"
+    }
+]
