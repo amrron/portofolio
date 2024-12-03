@@ -1,120 +1,126 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Terminal } from "@xterm/xterm";
+import { Terminal } from "xterm";
 import "xterm/css/xterm.css";
-// import { FitAddon } from "@xterm/addon-fit";
+import { FitAddon } from "@xterm/addon-fit";
 
 export default function Home() {
-  const [position, setPosition] = useState({ x: 100, y: 100 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const [position, setPosition] = useState({ x: 100, y: 100 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const prefix = "welcome@portofolio-ali:~$ ";
+    const [currentLine, setCurrentLine] = useState("");
+    const [isInitialized, setIsInitialized] = useState(false);
 
-  const terminalRef = useRef<HTMLDivElement>(null);
-  const terminalInstance = useRef<Terminal | null>(null);
-  const prefix = "welcome@portofolio-ali:~$ ";
-  const [currentLine, setCurrentLine] = useState("");
-  const [isInitialized, setIsInitialized] = useState(false);
+    const termRef = useRef<HTMLDivElement>(null);
+    const terminalInstance = useRef<Terminal | null>(null);
+    const fitAddon = useRef<FitAddon | null>(null);
 
-    async function getProjects() {
+    // Get list of project
+    const getProjects = async () => {
         const response = await fetch("/projects.json");
-        const data = await response.json();
-        return data;
-    }
-    
-  const printHelpText = (
-      terminal: Terminal,
-      name: string,
-      description: string,
-      link: string
-  ) => {
-      const namePadding = 20; // Adjust the padding as needed
-      const terminalWidth = terminal.cols; // Get the width of the terminal
-      const maxDescriptionWidth = terminalWidth - namePadding;
+        const projects = await response.json();
+        return projects;
+    };
 
-      const words = description.split(" ");
-      let currentLine = "";
-      const lines = [];
+    // Print list of projects
+    const printHelpText = (
+        terminal: Terminal,
+        name: string,
+        description: string,
+        link: string
+    ) => {
+        const namePadding = 20; // Adjust the padding as needed
+        const terminalWidth = terminal.cols; // Get the width of the terminal
+        const maxDescriptionWidth = terminalWidth - namePadding;
 
-      words.forEach((word) => {
-          if ((currentLine + word).length > maxDescriptionWidth) {
-              lines.push(currentLine.trim());
-              currentLine = word + " ";
-          } else {
-              currentLine += word + " ";
-          }
-      });
+        const words = description.split(" ");
+        let currentLine = "";
+        const lines = [];
 
-      if (currentLine.trim().length > 0) {
-          lines.push(currentLine.trim());
-      }
+        words.forEach((word) => {
+            if ((currentLine + word).length > maxDescriptionWidth) {
+                lines.push(currentLine.trim());
+                currentLine = word + " ";
+            } else {
+                currentLine += word + " ";
+            }
+        });
 
-      const paddedName = name.padEnd(namePadding, " ");
-      terminal.writeln('');
-      terminal.writeln(`${paddedName}${lines[0]}`);
-      for (let i = 1; i < lines.length; i++) {
-          terminal.writeln(" ".repeat(namePadding) + lines[i]);
-      }
-      terminal.writeln(
-          " ".repeat(namePadding) + "[\x1b]8;;"+link+"\x1b\\Link\x1b]8;;\x1b\\]"
-      );
-  };
-    
-  // Add drag handlers
-  const handleMouseDown = useCallback(
-      (e: React.MouseEvent) => {
-          if (
-              e.target instanceof Element &&
-              e.target.closest(".terminal-header")
-          ) {
-              setIsDragging(true);
-              setDragOffset({
-                  x: e.clientX - position.x,
-                  y: e.clientY - position.y,
-              });
-          }
-      },
-      [position]
-  );
+        if (currentLine.trim().length > 0) {
+            lines.push(currentLine.trim());
+        }
 
-  const handleMouseMove = useCallback(
-      (e: MouseEvent) => {
-          if (isDragging) {
-              setPosition({
-                  x: e.clientX - dragOffset.x,
-                  y: e.clientY - dragOffset.y,
-              });
-          }
-      },
-      [isDragging, dragOffset]
-  );
+        const paddedName = name.padEnd(namePadding, " ");
+        terminal.writeln("");
+        terminal.writeln(`${paddedName}${lines[0]}`);
+        for (let i = 1; i < lines.length; i++) {
+            terminal.writeln(" ".repeat(namePadding) + lines[i]);
+        }
+        terminal.writeln(
+            " ".repeat(namePadding) +
+                "[\x1b]8;;" +
+                link +
+                "\x1b\\Link\x1b]8;;\x1b\\]"
+        );
+    };
 
-  const handleMouseUp = useCallback(() => {
-      setIsDragging(false);
-  }, []);
+    // Add drag handlers
+    const handleMouseDown = useCallback(
+        (e: React.MouseEvent) => {
+            if (
+                e.target instanceof Element &&
+                e.target.closest(".terminal-header")
+            ) {
+                setIsDragging(true);
+                setDragOffset({
+                    x: e.clientX - position.x,
+                    y: e.clientY - position.y,
+                });
+            }
+        },
+        [position]
+    );
 
-  // Add event listeners
-  useEffect(() => {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-      return () => {
-          document.removeEventListener("mousemove", handleMouseMove);
-          document.removeEventListener("mouseup", handleMouseUp);
-      };
-  }, [handleMouseMove, handleMouseUp]);
+    const handleMouseMove = useCallback(
+        (e: MouseEvent) => {
+            if (isDragging) {
+                setPosition({
+                    x: e.clientX - dragOffset.x,
+                    y: e.clientY - dragOffset.y,
+                });
+            }
+        },
+        [isDragging, dragOffset]
+    );
 
-  const sleep = (ms: number) =>
-      new Promise((resolve) => setTimeout(resolve, ms));
+    const handleMouseUp = useCallback(() => {
+        setIsDragging(false);
+    }, []);
 
-  const printWithDelay = async (lines: string[]) => {
-      if (!terminalInstance.current) return;
-      for (const line of lines) {
-          terminalInstance.current.writeln(line);
-          await sleep(50);
-      }
-  };
+    // Add event listeners
+    useEffect(() => {
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
+        return () => {
+            document.removeEventListener("mousemove", handleMouseMove);
+            document.removeEventListener("mouseup", handleMouseUp);
+        };
+    }, [handleMouseMove, handleMouseUp]);
 
-  const neofetch = `    
+    const sleep = (ms: number) =>
+        new Promise((resolve) => setTimeout(resolve, ms));
+
+    const printWithDelay = async (lines: string[]) => {
+        if (!terminalInstance.current) return;
+        for (const line of lines) {
+            terminalInstance.current.writeln(line);
+            await sleep(50);
+        }
+    };
+
+    const neofetch = `    
 [0m[38;2;117;104;97m:[0m[38;2;127;112;106mc[0m[38;2;135;115;108mc[0m[38;2;136;110;101mc[0m[38;2;167;129;115mo[0m[38;2;216;199;193mK[0m[38;2;228;233;234mN[0m[38;2;233;238;240mN[0m[38;2;236;242;243mW[0m[38;2;231;238;240mN[0m[38;2;248;250;250mM[0m[38;2;248;251;250mM[0m[38;2;255;255;255mM[0m[38;2;252;253;253mM[0m[38;2;255;255;255mM[0m[38;2;255;255;255mM[0m[38;2;245;246;243mW[0m[38;2;243;218;210mX[0m[38;2;253;214;205mX[0m[38;2;212;229;240mX[0m[38;2;210;228;237mX[0m[38;2;207;223;232mX[0m[38;2;222;239;246mN[0m[38;2;237;245;246mW[0m[38;2;228;236;236mN[0m[38;2;226;230;229mN[0m[38;2;252;253;252mM[0m[38;2;181;182;183mO[0m[38;2;110;106;109m:[0m[38;2;113;108;109m:[0m[38;2;113;109;109m:[0m[38;2;106;103;106m:[0m[38;2;102;98;100m:[0m[38;2;102;95;95m;[0m[38;2;100;92;90m;[0m[38;2;99;91;89m;[0m[38;2;96;87;86m;[0m[38;2;104;90;89m;[0m[38;2;106;91;89m;[0m[38;2;112;93;91m:[0m[38;2;116;94;90m:[0m[38;2;119;97;91m:[0m[38;2;126;99;94m:[0m[38;2;126;98;93m:[0m[38;2;130;99;94m:[0m[38;2;137;104;97mc[0m[38;2;139;104;96mc[0m[38;2;136;103;95mc[0m[38;2;144;106;97mc[0m[38;2;154;111;101ml[0m[38;2;157;111;100ml[0m[38;2;163;114;102ml[0m[38;2;162;113;101ml[0m[38;2;161;113;101ml[0m[38;2;164;115;101ml[0m[38;2;164;114;100ml[0m[38;2;163;113;100ml[0m[38;2;164;113;101ml[0m[38;2;169;115;101ml[0m[38;2;171;116;102ml[0m
 [0m[38;2;143;134;128mo[0m[38;2;150;140;135mo[0m[38;2;147;137;131mo[0m[38;2;138;124;117ml[0m[38;2;143;123;114ml[0m[38;2;210;201;197mK[0m[38;2;226;232;233mN[0m[38;2;237;241;242mW[0m[38;2;239;244;244mW[0m[38;2;239;245;246mW[0m[38;2;250;251;252mM[0m[38;2;249;251;252mM[0m[38;2;255;255;255mM[0m[38;2;253;253;253mM[0m[38;2;254;254;254mM[0m[38;2;255;255;255mM[0m[38;2;245;238;233mW[0m[38;2;243;194;178mK[0m[38;2;251;199;186mK[0m[38;2;246;204;195mX[0m[38;2;242;207;198mX[0m[38;2;237;207;199mX[0m[38;2;241;215;207mX[0m[38;2;242;223;216mN[0m[38;2;233;233;230mN[0m[38;2;224;228;227mN[0m[38;2;249;251;251mM[0m[38;2;179;178;181mk[0m[38;2;99;87;89m;[0m[38;2;127;102;99m:[0m[38;2;131;105;101mc[0m[38;2;130;107;104mc[0m[38;2;135;109;106mc[0m[38;2;140;114;110mc[0m[38;2;139;113;108mc[0m[38;2;139;112;107mc[0m[38;2;135;110;106mc[0m[38;2;131;107;102mc[0m[38;2;131;106;103mc[0m[38;2;123;103;101m:[0m[38;2;120;101;99m:[0m[38;2;115;97;95m:[0m[38;2;113;97;96m:[0m[38;2;108;92;92m;[0m[38;2;108;94;94m;[0m[38;2;111;94;92m:[0m[38;2;110;93;92m;[0m[38;2;107;91;89m;[0m[38;2;109;91;88m;[0m[38;2;113;92;89m;[0m[38;2;119;95;90m:[0m[38;2;132;99;93m:[0m[38;2;140;104;95mc[0m[38;2;129;99;92m:[0m[38;2;124;95;89m:[0m[38;2;132;98;92m:[0m[38;2;136;100;92m:[0m[38;2;138;101;93mc[0m[38;2;147;105;96mc[0m[38;2;153;108;98mc[0m
 [0m[38;2;217;222;219mX[0m[38;2;220;223;221mX[0m[38;2;222;225;221mX[0m[38;2;222;224;221mX[0m[38;2;222;223;219mX[0m[38;2;227;228;225mN[0m[38;2;234;239;238mN[0m[38;2;237;242;241mW[0m[38;2;223;229;231mN[0m[38;2;227;232;233mN[0m[38;2;240;242;242mW[0m[38;2;247;250;251mW[0m[38;2;255;255;255mM[0m[38;2;253;253;253mM[0m[38;2;254;254;254mM[0m[38;2;249;249;249mM[0m[38;2;232;228;223mN[0m[38;2;189;173;166mk[0m[38;2;192;170;162mk[0m[38;2;195;164;153mk[0m[38;2;203;166;148mk[0m[38;2;202;159;142mk[0m[38;2;203;151;133mx[0m[38;2;201;146;129mx[0m[38;2;193;173;168mk[0m[38;2;172;174;176mk[0m[38;2;183;187;189mO[0m[38;2;148;151;154md[0m[38;2;104;104;108m:[0m[38;2;98;97;101m;[0m[38;2;105;102;106m:[0m[38;2;101;98;100m:[0m[38;2;95;91;93m;[0m[38;2;107;101;102m:[0m[38;2;117;107;105m:[0m[38;2;120;107;105mc[0m[38;2;113;101;99m:[0m[38;2;113;101;99m:[0m[38;2;123;103;99m:[0m[38;2;129;106;99mc[0m[38;2;132;106;99mc[0m[38;2;133;104;96mc[0m[38;2;132;103;95mc[0m[38;2;133;102;95mc[0m[38;2;131;101;95m:[0m[38;2;131;101;95m:[0m[38;2;129;100;94m:[0m[38;2;130;102;96m:[0m[38;2;132;103;97mc[0m[38;2;131;103;98mc[0m[38;2;126;99;94m:[0m[38;2;124;99;95m:[0m[38;2;122;97;93m:[0m[38;2;125;101;97m:[0m[38;2;113;92;90m;[0m[38;2;113;93;90m:[0m[38;2;113;92;90m;[0m[38;2;114;94;92m:[0m[38;2;114;92;90m;[0m[38;2;112;90;87m;[0m
@@ -147,134 +153,146 @@ export default function Home() {
 [0m[38;2;73;87;107m,[0m[38;2;73;88;107m,[0m[38;2;64;78;98m,[0m[38;2;61;74;94m'[0m[38;2;60;73;92m'[0m[38;2;72;85;107m,[0m[38;2;61;72;92m'[0m[38;2;70;82;100m,[0m[38;2;70;83;99m,[0m[38;2;70;83;100m,[0m[38;2;77;89;106m;[0m[38;2;81;93;109m;[0m[38;2;88;99;114m;[0m[38;2;102;111;125m:[0m[38;2;111;120;132mc[0m[38;2;117;126;136ml[0m[38;2;114;120;133mc[0m[38;2;114;122;135mc[0m[38;2;88;96;110m;[0m[38;2;75;84;97m,[0m[38;2;78;85;96m,[0m[38;2;84;90;99m;[0m[38;2;77;83;90m,[0m[38;2;74;79;87m,[0m[38;2;75;80;87m,[0m[38;2;69;75;84m'[0m[38;2;63;70;83m'[0m[38;2;49;58;71m.[0m[38;2;35;47;61m.[0m[38;2;31;42;55m.[0m[38;2;25;36;50m.[0m[38;2;27;37;54m.[0m[38;2;27;38;54m.[0m[38;2;32;44;61m.[0m[38;2;34;47;62m.[0m[38;2;27;39;52m.[0m[38;2;25;37;49m.[0m[38;2;25;37;50m.[0m[38;2;26;39;52m.[0m[38;2;28;41;53m.[0m[38;2;28;41;54m.[0m[38;2;33;47;60m.[0m[38;2;44;60;74m.[0m[38;2;52;68;85m'[0m[38;2;39;54;71m.[0m[38;2;46;61;78m.[0m[38;2;44;57;74m.[0m[38;2;47;61;79m.[0m[38;2;54;67;88m'[0m[38;2;54;67;87m'[0m[38;2;48;60;78m.[0m[38;2;53;64;82m.[0m[38;2;68;80;100m,[0m[38;2;66;75;94m'[0m[38;2;72;81;96m,[0m[38;2;81;90;106m;[0m[38;2;86;95;110m;[0m[38;2;94;103;118m:[0m[38;2;93;102;120m:[0m[38;2;106;117;136mc[0m
     `.split("\n");
 
-  const runCommand = useCallback((command: string) => {
-      if (!terminalInstance.current) return;
-      if (command === "") {
-          return;
-      } else if (command === "ls projects") {
-          getProjects().then((projects) => {
-              if (terminalInstance.current) {
-                  terminalInstance.current.writeln('');
-                    terminalInstance.current.writeln("\nThis is the list of project that i've been worked for:");
+    const runCommand = useCallback((command: string) => {
+        if (!terminalInstance.current) return;
+        if (command === "") {
+            return;
+        } else if (command === "ls projects") {
+            getProjects().then((projects) => {
+                if (terminalInstance.current) {
+                    terminalInstance.current.writeln("");
+                    terminalInstance.current.writeln(
+                        "\nThis is the list of project that i've been worked for:"
+                    );
                 }
-                projects.forEach((project: { name: string; description: string; url: string; }) => {
-                    if (terminalInstance.current) {
-                        return printHelpText(terminalInstance.current, project.name, project.description, project.url);
+                projects.forEach(
+                    (project: {
+                        name: string;
+                        description: string;
+                        url: string;
+                    }) => {
+                        if (terminalInstance.current) {
+                            return printHelpText(
+                                terminalInstance.current,
+                                project.name,
+                                project.description,
+                                project.url
+                            );
+                        }
                     }
-                });
+                );
             });
-              
-      } else if (command.startsWith("cd ")) {
-          const dir = command.split(" ")[1];
-          terminalInstance.current.writeln(`Changed directory to ${dir}`);
-      } else {
-          terminalInstance.current.writeln(`${command}: command not found`);
-      }
-  }, []);
+        } else if (command.startsWith("cd ")) {
+            const dir = command.split(" ")[1];
+            terminalInstance.current.writeln(`Changed directory to ${dir}`);
+        } else {
+            terminalInstance.current.writeln(`${command}: command not found`);
+        }
+    }, []);
 
-  useEffect(() => {
-      if (terminalRef.current && !isInitialized) {
-        //   Addon initialization
-        //   const fitAddon = new FitAddon(); 
+    useEffect(() => {
+        if (
+            typeof window !== "undefined" &&
+            termRef.current &&
+            !terminalInstance.current
+        ) {
+            terminalInstance.current = new Terminal({
+                rows: 40,
+                cols: 130,
+                fontFamily: "Fira Code, monospace",
+                fontSize: 14,
+                theme: {
+                    background: "#1e1e1e",
+                    foreground: "#d4d4d4",
+                },
+                cursorBlink: true,
+            });
+            fitAddon.current = new FitAddon();
+            terminalInstance.current.loadAddon(fitAddon.current);
+            terminalInstance.current.open(termRef.current);
+            fitAddon.current.fit();
 
-          terminalInstance.current = new Terminal({
-              rows: 40,
-              cols: 130,
-              fontFamily: "Fira Code, monospace",
-              fontSize: 14,
-              theme: {
-                  background: "#1e1e1e",
-                  foreground: "#d4d4d4",
-              },
-              cursorBlink: true,
-          });
+            printWithDelay(neofetch).then(() => {
+                if (terminalInstance.current) {
+                    terminalInstance.current.write(prefix);
+                    setIsInitialized(true);
+                }
+            });
+        }
 
-        //   load addons
-        //   terminalInstance.current.loadAddon(fitAddon);
+        return () => {
+            terminalInstance.current?.dispose();
+        };
+    }, []);
 
-          terminalInstance.current.open(terminalRef.current);
-        //   fitAddon.fit();
+    useEffect(() => {
+        if (isInitialized && terminalInstance.current) {
+            const handleKey = ({
+                key,
+                domEvent,
+            }: {
+                key: string;
+                domEvent: KeyboardEvent;
+            }) => {
+                if (!terminalInstance.current) return;
 
-          printWithDelay(neofetch).then(() => {
-              if (terminalInstance.current) {
-                  terminalInstance.current.write(prefix);
-                  setIsInitialized(true);
-              }
-          });
-      }
+                if (domEvent.key === "Backspace") {
+                    if (currentLine.length > 0) {
+                        setCurrentLine((prev) => prev.slice(0, -1));
+                        terminalInstance.current.write("\b \b");
+                    }
+                    return;
+                }
 
-      return () => {
-          terminalInstance.current?.dispose();
-      };
-  }, []);
+                if (domEvent.key === "Enter") {
+                    terminalInstance.current.writeln("");
+                    runCommand(currentLine);
+                    setCurrentLine("");
+                    terminalInstance.current.write(prefix);
+                    return;
+                }
 
-  useEffect(() => {
-      if (isInitialized && terminalInstance.current) {
-          const handleKey = ({
-              key,
-              domEvent,
-          }: {
-              key: string;
-              domEvent: KeyboardEvent;
-          }) => {
-              if (!terminalInstance.current) return;
+                if (!domEvent.altKey && !domEvent.ctrlKey && key.length === 1) {
+                    setCurrentLine((prev) => prev + key);
+                    terminalInstance.current.write(key);
+                }
+            };
 
-              if (domEvent.key === "Backspace") {
-                  if (currentLine.length > 0) {
-                      setCurrentLine((prev) => prev.slice(0, -1));
-                      terminalInstance.current.write("\b \b");
-                  }
-                  return;
-              }
+            const disposable = terminalInstance.current.onKey(handleKey);
 
-              if (domEvent.key === "Enter") {
-                  terminalInstance.current.writeln("");
-                  runCommand(currentLine);
-                  setCurrentLine("");
-                  terminalInstance.current.write(prefix);
-                  return;
-              }
+            return () => {
+                disposable.dispose();
+            };
+        }
+    }, [isInitialized, currentLine, runCommand]);
 
-              if (!domEvent.altKey && !domEvent.ctrlKey && key.length === 1) {
-                  setCurrentLine((prev) => prev + key);
-                  terminalInstance.current.write(key);
-              }
-          };
-
-          const disposable = terminalInstance.current.onKey(handleKey);
-
-          return () => {
-              disposable.dispose();
-          };
-      }
-  }, [isInitialized, currentLine, runCommand]);
-  return (
-      <div className="">
-          <div className="terminal-wrapper">
-              <div
-                  className="terminal-window"
-                  style={{
-                      position: "absolute",
-                      left: `${position.x}px`,
-                      top: `${position.y}px`,
-                  }}
-              >
-                  <div
-                      className="terminal-header"
-                      onMouseDown={handleMouseDown}
-                      style={{ cursor: "grab" }}
-                  >
-                      <div className="terminal-title">Terminal</div>
-                      <div className="terminal-subtitle">{prefix}</div>
-                      <div className="window-controls">
-                          <div className="control minimize"></div>
-                          <div className="control maximize"></div>
-                          <div className="control close"></div>
-                      </div>
-                  </div>
-                  <div className="terminal-container" ref={terminalRef} />
-              </div>
-          </div>
-      </div>
-  );
+    return (
+        <div className="">
+            <div className="terminal-wrapper">
+                <div
+                    className="terminal-window"
+                    style={{
+                        position: "absolute",
+                        left: `${position.x}px`,
+                        top: `${position.y}px`,
+                    }}
+                >
+                    <div
+                        className="terminal-header"
+                        onMouseDown={handleMouseDown}
+                        style={{ cursor: "grab" }}
+                    >
+                        <div className="terminal-title">Terminal</div>
+                        <div className="terminal-subtitle">{prefix}</div>
+                        <div className="window-controls">
+                            <div className="control minimize"></div>
+                            <div className="control maximize"></div>
+                            <div className="control close"></div>
+                        </div>
+                    </div>
+                    <div className="terminal-container" ref={termRef}></div>
+                </div>
+            </div>
+        </div>
+    );
 }
