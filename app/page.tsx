@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Terminal } from "@xterm/xterm";
 import "xterm/css/xterm.css";
+import { FitAddon } from "@xterm/addon-fit";
 
 export default function Home() {
   const [position, setPosition] = useState({ x: 100, y: 100 });
@@ -126,6 +127,7 @@ export default function Home() {
 
   useEffect(() => {
       if (terminalRef.current && !isInitialized) {
+           const fitAddon = new FitAddon();
 
           terminalInstance.current = new Terminal({
               rows: 40,
@@ -138,8 +140,10 @@ export default function Home() {
               },
               cursorBlink: true,
           });
+          terminalInstance.current.loadAddon(fitAddon);
 
           terminalInstance.current.open(terminalRef.current);
+          fitAddon.fit();
 
           printWithDelay(neofetch).then(() => {
               if (terminalInstance.current) {
@@ -193,7 +197,7 @@ export default function Home() {
               disposable.dispose();
           };
       }
-  }, []);
+  }, [isInitialized, currentLine, runCommand]);
   return (
       <div className="">
           <div className="terminal-wrapper">
