@@ -3,8 +3,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Terminal } from "@xterm/xterm";
 import "xterm/css/xterm.css";
-import { FitAddon } from "@xterm/addon-fit";
-import { WebLinksAddon } from "@xterm/addon-web-links";
 
 export default function Home() {
   const [position, setPosition] = useState({ x: 100, y: 100 });
@@ -130,7 +128,7 @@ export default function Home() {
       if (terminalRef.current && !isInitialized) {
 
           terminalInstance.current = new Terminal({
-              rows: 30,
+              rows: 40,
               cols: 130,
               fontFamily: "Fira Code, monospace",
               fontSize: 14,
@@ -195,7 +193,7 @@ export default function Home() {
               disposable.dispose();
           };
       }
-  }, [isInitialized, currentLine, runCommand]);
+  }, []);
   return (
       <div className="">
           <div className="terminal-wrapper">

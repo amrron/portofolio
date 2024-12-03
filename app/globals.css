@@ -81,7 +81,7 @@
 
 .terminal-container {
     padding: 4px;
-    height: calc(100% - 30px);
+    height: 100%;
 }
 
 /* Override xterm styles */
