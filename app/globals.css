@@ -27,15 +27,15 @@
     width: auto;
     height: auto;
     background: #1e1e1e;
-    border-radius: 6px;
+    border-radius: 12px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
     overflow: hidden;
     border: 1px solid #333;
 }
 
 .terminal-header {
-    background: #2d2d2d;
-    height: 30px;
+    background: #222222;
+    height: 45px;
     padding: 0 10px;
     display: flex;
     align-items: center;
@@ -57,17 +57,23 @@
 
 .window-controls {
     display: flex;
-    gap: 8px;
+    gap: 18px;
 }
 
 .control {
-    width: 12px;
-    height: 12px;
+    @apply shadow-md;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     cursor: pointer;
+    background-color: #3c3c3c;
 }
 
-.minimize {
+.control:hover {
+    background-color: #4c4c4c;
+}
+
+/* .minimize {
     background: #f1c40f;
 }
 
@@ -77,16 +83,16 @@
 
 .close {
     background: #e74c3c;
-}
+} */
 
 .terminal-container {
-    padding: 4px;
+    width: 100%;
     height: calc(100% - 30px);
 }
 
 /* Override xterm styles */
 .xterm {
-    padding: 8px;
+    margin: 8px;
 }
 
 .xterm-viewport {

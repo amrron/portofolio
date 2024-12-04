@@ -4,6 +4,10 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { FitAddon } from "@xterm/addon-fit";
+import TerminalIcon from "./components/TerminalIcon";
+import WindowClose from "./components/WindowClose";
+import WindowMinimize from "./components/WindowMinimize";
+import WindowMaximize from "./components/WindowMaximize";
 
 export default function Home() {
     const [position, setPosition] = useState({ x: 100, y: 100 });
@@ -16,6 +20,9 @@ export default function Home() {
         x: 0,
         y: 0,
     });
+    const [isMinimized, setIsMinimized] = useState(false);
+    const [isClosed, setIsClosed] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const prefix = "welcome@portofolio-ali:~$ ";
     const [currentLine, setCurrentLine] = useState("");
     const [isInitialized, setIsInitialized] = useState(false);
@@ -24,53 +31,12 @@ export default function Home() {
     const terminalInstance = useRef<Terminal | null>(null);
     const fitAddon = useRef<FitAddon | null>(null);
 
-    useEffect(() => {
-        if (typeof window !== "undefined" && termRef.current) {
-            console.log("Initializing terminal...");
-            fitAddon.current = new FitAddon();
-            terminalInstance.current = new Terminal({
-                rows: 40,
-                cols: 130,
-                fontFamily: "Fira Code, monospace",
-                fontSize: 14,
-                theme: {
-                    background: "#1e1e1e",
-                    foreground: "#d4d4d4",
-                },
-                cursorBlink: true,
-            });
-            terminalInstance.current.loadAddon(fitAddon.current);
-            terminalInstance.current.open(termRef.current);
-            fitAddon.current?.fit();
-
-            printWithDelay(neofetch).then(() => {
-                if (terminalInstance.current) {
-                    terminalInstance.current.write(prefix);
-                    setIsInitialized(true);
-                }
-            });
-
-            // Add event listener for window resize
-            window.addEventListener("resize", () => {
-                console.log("Window resized, fitting terminal...");
-                fitAddon.current?.fit();
-            });
-
-            return () => {
-                terminalInstance.current?.dispose();
-                if (fitAddon.current) {
-                    window.removeEventListener("resize", fitAddon.current.fit);
-                }
-            };
-        }
-    }, []);
-
     const printWithDelay = async (lines: string[]) => {
         if (!terminalInstance.current) return;
         for (const line of lines) {
             terminalInstance.current.writeln(line);
             terminalInstance.current.scrollToBottom(); // Scroll to bottom after each line
-            await sleep(50);
+            await sleep(10);
         }
     };
 
@@ -159,6 +125,64 @@ export default function Home() {
         );
     };
 
+    const initializeTerminal = useCallback(() => {
+        if (!isInitialized && termRef.current) {
+            termRef.current.innerHTML = "";
+
+            fitAddon.current = new FitAddon();
+            terminalInstance.current = new Terminal({
+                rows: 40,
+                cols: 130,
+                fontFamily: "Fira Code, monospace",
+                fontSize: 14,
+                theme: {
+                    background: "#1e1e1e",
+                    foreground: "#d4d4d4",
+                },
+                cursorBlink: true,
+            });
+            terminalInstance.current.loadAddon(fitAddon.current);
+            terminalInstance.current.open(termRef.current);
+            fitAddon.current?.fit();
+
+            setResizeStart({
+                width: termRef.current.offsetWidth,
+                height: termRef.current.offsetHeight,
+                x: 100,
+                y: 100,
+            });
+
+            printWithDelay(neofetch).then(() => {
+                if (terminalInstance.current) {
+                    terminalInstance.current.write(prefix);
+                    setIsInitialized(true);
+                }
+            });
+        }
+    }, [isInitialized]);
+
+    useEffect(() => {
+        const handleResize = () => {
+            fitAddon.current?.fit();
+        };
+
+        window.addEventListener("resize", handleResize);
+
+        if (isFullscreen && fitAddon.current) {
+            fitAddon.current.fit();
+        }
+
+        return () => {
+            window.removeEventListener("resize", handleResize);
+        };
+    }, [isFullscreen]);
+
+    useEffect(() => {
+        if (!isClosed) {
+            initializeTerminal()
+        }
+    }, [isClosed]);
+
     // Add drag handlers
     const handleMouseDown = useCallback(
         (e: React.MouseEvent) => {
@@ -179,9 +203,34 @@ export default function Home() {
     const handleMouseMove = useCallback(
         (e: MouseEvent) => {
             if (isDragging) {
+                 const newX = e.clientX - dragOffset.x;
+                 const newY = e.clientY - dragOffset.y;
+
+                 // Get the window dimensions
+                 const windowWidth = window.innerWidth;
+                 const windowHeight = window.innerHeight;
+
+                 // Get the terminal window dimensions
+                 const terminalWidth = termRef.current
+                     ? termRef.current.offsetWidth
+                     : 0;
+                 const terminalHeight = termRef.current
+                     ? termRef.current.offsetHeight
+                     : 0;
+
+                 // Ensure the terminal window stays within the screen bounds
+                 const boundedX = Math.max(
+                     0,
+                     Math.min(newX, windowWidth - terminalWidth)
+                 );
+                 const boundedY = Math.max(
+                     0,
+                     Math.min(newY, windowHeight - terminalHeight)
+                 );
+                
                 setPosition({
-                    x: e.clientX - dragOffset.x,
-                    y: e.clientY - dragOffset.y,
+                    x: boundedX,
+                    y: boundedY,
                 });
             } else if (isResizing && termRef.current) {
                 const newWidth =
@@ -214,6 +263,34 @@ export default function Home() {
             });
         }
     }, []);
+
+    const handleMinimize = () => {
+        setIsMinimized(true);
+    };
+
+    const handleTerminalIcon = () => {
+        if (isClosed) {
+            setIsClosed(false);
+        }
+        else if (isMinimized) {
+            setIsMinimized(false);
+        }
+    };
+
+    const handleClose = () => {
+        setIsClosed(true);
+        setIsInitialized(false);
+        terminalInstance.current?.dispose();
+        terminalInstance.current = null;
+        fitAddon.current = null;
+    };
+
+    const fullScreenToggle = () => {
+        setIsFullscreen(!isFullscreen);
+        if (isFullscreen && fitAddon.current) {
+            fitAddon.current?.fit();
+        }
+    }
 
     // Add event listeners
     useEffect(() => {
@@ -307,11 +384,16 @@ export default function Home() {
         <div className="">
             <div className="terminal-wrapper">
                 <div
-                    className="terminal-window"
+                    className={`terminal-window`}
                     style={{
-                        position: "absolute",
-                        left: `${position.x}px`,
-                        top: `${position.y}px`,
+                        position: isFullscreen ? "fixed" : "absolute",
+                        left: isFullscreen ? "0" : `${position.x}px`,
+                        top: isFullscreen ? "0" : `${position.y}px`,
+                        width: isFullscreen ? "100vw" : "auto",
+                        height: isFullscreen ? "100vh" : "auto",
+                        borderRadius: isFullscreen ? "0" : "12px",
+                        zIndex: 50,
+                        display: isMinimized || isClosed || !termRef.current ? "none" : "block",
                     }}
                 >
                     <div
@@ -319,15 +401,41 @@ export default function Home() {
                         onMouseDown={handleMouseDown}
                         style={{ cursor: "grab" }}
                     >
-                        <div className="terminal-title">Terminal</div>
-                        <div className="terminal-subtitle">{prefix}</div>
+                        <div className="terminal-title select-none font-bold">
+                            Terminal
+                        </div>
+                        <div className="terminal-subtitle select-none font-semibold">
+                            {prefix}
+                        </div>
                         <div className="window-controls">
-                            <div className="control minimize"></div>
-                            <div className="control maximize"></div>
-                            <div className="control close"></div>
+                            <div
+                                className="control minimize flex justify-center items-center"
+                                onClick={handleMinimize}
+                            >
+                                <WindowMinimize />
+                            </div>
+                            <div
+                                className="control maximize flex justify-center items-center"
+                                onClick={fullScreenToggle}
+                            >
+                                <WindowMaximize />
+                            </div>
+                            <div
+                                className="control close flex justify-center items-center"
+                                onClick={handleClose}
+                            >
+                                <WindowClose />
+                            </div>
                         </div>
                     </div>
-                    <div className="terminal-container" ref={termRef}></div>
+                    <div
+                        className="terminal-container"
+                        ref={termRef}
+                        style={{
+                            width: isFullscreen ? "100vw" : (resizeStart.width != 0 ? resizeStart.width : "auto"),
+                            height: isFullscreen ? "100vh" : (resizeStart.height != 0 ? resizeStart.height : "auto"),
+                        }}
+                    ></div>
                     <div
                         className="resize-handle"
                         onMouseDown={handleResizeMouseDown}
@@ -339,8 +447,19 @@ export default function Home() {
                             right: "0",
                             bottom: "0",
                             cursor: "nwse-resize",
+                            display: isFullscreen ? "none" : "block",
                         }}
                     ></div>
+                </div>
+
+                <div className="z-0 absolute left-2 top-2 flex flex-col gap-2">
+                    <div
+                        className="flex flex-col items-center p-2 hover:bg-blue-200 cursor-pointer rounded-sm"
+                        onClick={handleTerminalIcon}
+                    >
+                        <TerminalIcon />
+                        <span className="select-none">Terminal</span>
+                    </div>
                 </div>
             </div>
         </div>
