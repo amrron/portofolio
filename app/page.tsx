@@ -4,12 +4,21 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { FitAddon } from "@xterm/addon-fit";
+import { LigaturesAddon } from "@xterm/addon-ligatures";
 import TerminalIcon from "./components/TerminalIcon";
 import WindowClose from "./components/WindowClose";
 import WindowMinimize from "./components/WindowMinimize";
 import WindowMaximize from "./components/WindowMaximize";
 
 export default function Home() {
+    useEffect(() => {
+        const link = document.createElement("link");
+        link.href =
+            "https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap";
+        link.rel = "stylesheet";
+        document.head.appendChild(link);
+    }, []);
+    
     const [position, setPosition] = useState({ x: 100, y: 100 });
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -130,6 +139,7 @@ export default function Home() {
             termRef.current.innerHTML = "";
 
             fitAddon.current = new FitAddon();
+            const ligaturesAddon = new LigaturesAddon();
             terminalInstance.current = new Terminal({
                 rows: 40,
                 cols: 130,
@@ -140,9 +150,11 @@ export default function Home() {
                     foreground: "#d4d4d4",
                 },
                 cursorBlink: true,
+                allowProposedApi: true,
             });
             terminalInstance.current.loadAddon(fitAddon.current);
             terminalInstance.current.open(termRef.current);
+            terminalInstance.current.loadAddon(ligaturesAddon);
             fitAddon.current?.fit();
 
             setResizeStart({
@@ -329,7 +341,9 @@ export default function Home() {
                             );
                         }
                     }
-                );
+                )
+                terminalInstance.current?.writeln("");
+                terminalInstance.current?.write(prefix);
             });
         } else if (command.startsWith("cd ")) {
             const dir = command.split(" ")[1];
@@ -372,10 +386,20 @@ export default function Home() {
                 }
             };
 
+            const handleFocus = () => {
+                terminalInstance.current?.focus();
+            };
+
             const disposable = terminalInstance.current.onKey(handleKey);
+
+            // Add focus event listener for mobile devices
+            termRef.current?.addEventListener("click", handleFocus);
+            termRef.current?.addEventListener("touchstart", handleFocus);
 
             return () => {
                 disposable.dispose();
+                termRef.current?.removeEventListener("click", handleFocus);
+                termRef.current?.removeEventListener("touchstart", handleFocus);
             };
         }
     }, [isInitialized, currentLine, runCommand]);
@@ -435,6 +459,7 @@ export default function Home() {
                             width: isFullscreen ? "100vw" : (resizeStart.width != 0 ? resizeStart.width : "auto"),
                             height: isFullscreen ? "100vh" : (resizeStart.height != 0 ? resizeStart.height : "auto"),
                         }}
+                        tabIndex={0}
                     ></div>
                     <div
                         className="resize-handle"
